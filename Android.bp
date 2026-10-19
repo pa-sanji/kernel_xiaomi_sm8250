@@ -5,9 +5,6 @@
 cc_binary_host {
     name: "unifdef",
     srcs: ["scripts/unifdef.c"],
-    // unifdef.c still uses C89-style identifiers (including a local
-    // variable named "constexpr"), which is a keyword in C23.
-    cflags: ["-std=gnu89"],
     sanitize: {
         never: true,
     },
