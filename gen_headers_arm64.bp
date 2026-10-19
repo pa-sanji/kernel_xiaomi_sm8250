@@ -24,6 +24,8 @@ gen_headers_out_arm64 = [
 
     // Matching generic-y:
 
+    "asm/signal.h",
+
     "asm/errno.h",
     "asm/ioctl.h",
     "asm/ioctls.h",
