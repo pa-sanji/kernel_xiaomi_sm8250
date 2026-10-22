@@ -859,9 +859,19 @@ CONFIG_THERMAL_DIMMING=y
 CONFIG_NTSYNC=y
 
 # Droidspace
-CONFIG_SYSVIPC=y
-CONFIG_SYSVIPC_SYSCTL=y
-CONFIG_SYSVIPC_COMPAT=y
+# CONFIG_SYSVIPC is deliberately left off. The Android 17 framework
+# compatibility matrix requires it to be n
+# (hardware/interfaces/compatibility_matrices/compatibility_matrix.6.xml:1575,
+# generated from kernel/configs/*/android-base.config), and
+# check_target_files_vintf.py rejects the OTA when the kernel ships it:
+#
+#   No compatible kernel requirement found (kernel FCM version = 6).
+#   For config CONFIG_SYSVIPC, value = y but required n
+#
+# Nothing in Android uses SysV IPC (bionic exposes no shmget/semget wrappers);
+# it is only there for MIUI Droidspace, which this ROM does not ship.
+# CONFIG_IPC_NS depends on SYSVIPC in Kconfig, so it goes too - Android only
+# uses mount/pid/net/uts namespaces for app isolation, not IPC.
 CONFIG_DEVTMPFS=y
 CONFIG_IPC_NS=y
 CONFIG_PID_NS=y
