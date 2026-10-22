@@ -103,7 +103,8 @@ int dm_linear_map(struct dm_target *ti, struct bio *bio)
 	return DM_MAPIO_REMAPPED;
 }
 
-static int linear_end_io(struct dm_target *ti, struct bio *bio,
+#ifdef CONFIG_BLK_DEV_ZONED
+int dm_linear_end_io(struct dm_target *ti, struct bio *bio,
 			 blk_status_t *error)
 {
 	struct linear_c *lc = ti->private;
@@ -113,6 +114,8 @@ static int linear_end_io(struct dm_target *ti, struct bio *bio,
 
 	return DM_ENDIO_DONE;
 }
+EXPORT_SYMBOL_GPL(dm_linear_end_io);
+#endif
 
 void dm_linear_status(struct dm_target *ti, status_type_t type,
 			  unsigned status_flags, char *result, unsigned maxlen)
@@ -156,7 +159,7 @@ int dm_linear_iterate_devices(struct dm_target *ti,
 }
 
 #if IS_ENABLED(CONFIG_DAX_DRIVER)
-static long linear_dax_direct_access(struct dm_target *ti, pgoff_t pgoff,
+long dm_linear_dax_direct_access(struct dm_target *ti, pgoff_t pgoff,
 		long nr_pages, void **kaddr, pfn_t *pfn)
 {
 	long ret;
@@ -171,8 +174,9 @@ static long linear_dax_direct_access(struct dm_target *ti, pgoff_t pgoff,
 		return ret;
 	return dax_direct_access(dax_dev, pgoff, nr_pages, kaddr, pfn);
 }
+EXPORT_SYMBOL_GPL(dm_linear_dax_direct_access);
 
-static size_t linear_dax_copy_from_iter(struct dm_target *ti, pgoff_t pgoff,
+size_t dm_linear_dax_copy_from_iter(struct dm_target *ti, pgoff_t pgoff,
 		void *addr, size_t bytes, struct iov_iter *i)
 {
 	struct linear_c *lc = ti->private;
@@ -185,8 +189,9 @@ static size_t linear_dax_copy_from_iter(struct dm_target *ti, pgoff_t pgoff,
 		return 0;
 	return dax_copy_from_iter(dax_dev, pgoff, addr, bytes, i);
 }
+EXPORT_SYMBOL_GPL(dm_linear_dax_copy_from_iter);
 
-static size_t linear_dax_copy_to_iter(struct dm_target *ti, pgoff_t pgoff,
+static size_t dm_linear_dax_copy_to_iter(struct dm_target *ti, pgoff_t pgoff,
 		void *addr, size_t bytes, struct iov_iter *i)
 {
 	struct linear_c *lc = ti->private;
@@ -201,9 +206,9 @@ static size_t linear_dax_copy_to_iter(struct dm_target *ti, pgoff_t pgoff,
 }
 
 #else
-#define linear_dax_direct_access NULL
-#define linear_dax_copy_from_iter NULL
-#define linear_dax_copy_to_iter NULL
+#define dm_linear_dax_direct_access NULL
+#define dm_linear_dax_copy_from_iter NULL
+#define dm_linear_dax_copy_to_iter NULL
 #endif
 
 static struct target_type linear_target = {
@@ -220,12 +225,11 @@ static struct target_type linear_target = {
 	.dtr    = dm_linear_dtr,
 	.map    = dm_linear_map,
 	.status = dm_linear_status,
-	.end_io = linear_end_io,
 	.prepare_ioctl = dm_linear_prepare_ioctl,
 	.iterate_devices = dm_linear_iterate_devices,
-	.direct_access = linear_dax_direct_access,
-	.dax_copy_from_iter = linear_dax_copy_from_iter,
-	.dax_copy_to_iter = linear_dax_copy_to_iter,
+	.direct_access = dm_linear_dax_direct_access,
+	.dax_copy_from_iter = dm_linear_dax_copy_from_iter,
+	.dax_copy_to_iter = dm_linear_dax_copy_to_iter,
 };
 
 int __init dm_linear_init(void)
